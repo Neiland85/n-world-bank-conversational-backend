@@ -4,11 +4,14 @@
   "description": "Authentication and authorization service",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Running tests for auth-service...\" && exit 0",
     "lint": "echo \"Linting auth-service...\" && exit 0"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
 }
-
