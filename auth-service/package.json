@@ -8,10 +8,10 @@
     "test": "echo \"Running tests for auth-service...\" && exit 0",
     "lint": "echo \"Linting auth-service...\" && exit 0"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "supertest": "^7.0.0"
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }
+
