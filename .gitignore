@@ -1,0 +1,15 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+
+# IDEs
+.vscode/
+.DS_Store
+
+# Docker
+*.log
+
