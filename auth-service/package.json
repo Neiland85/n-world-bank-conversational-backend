@@ -1,0 +1,14 @@
+{
+  "name": "auth-service",
+  "version": "1.0.0",
+  "description": "Authentication and authorization service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Running tests for auth-service...\" && exit 0",
+    "lint": "echo \"Linting auth-service...\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+
