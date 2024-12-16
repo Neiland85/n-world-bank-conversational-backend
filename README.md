@@ -1,6 +1,6 @@
 # n-world-bank-conversational-backend
 
-Este repositorio contiene la arquitectura de backend basada en microservicios para el bot conversacional del Banco Santander UK, desarrollado por n.world/business.
+Este repositorio contiene la arquitectura de backend basada en microservicios para el bot conversacional de Banca, desarrollado por n.world/business.
 
 ## Estructura del proyecto
 
