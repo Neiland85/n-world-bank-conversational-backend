@@ -2,7 +2,7 @@ const eslintPluginPrettier = require("eslint-plugin-prettier");
 
 module.exports = [
   {
-    ignores: ["node_modules/**", "coverage/**"]
+    ignores: ["node_modules/**", "coverage/**"],
   },
   {
     files: ["**/*.js"],
@@ -10,15 +10,14 @@ module.exports = [
       ecmaVersion: "latest",
       globals: {
         node: true,
-        commonjs: true
-      }
+        commonjs: true,
+      },
     },
     plugins: {
-      prettier: eslintPluginPrettier
+      prettier: eslintPluginPrettier,
     },
     rules: {
-      "prettier/prettier": "error"
-    }
-  }
+      "prettier/prettier": "error",
+    },
+  },
 ];
-
