@@ -1,13 +1,13 @@
-version: "3.8"
-
 services:
   auth-service:
     build:
-      context: ../
-      dockerfile: infrastructure/Dockerfile.auth-service
-    container_name: auth-service
+      context: ../ 
+      dockerfile: infrastructure/Dockerfile.auth-service 
     ports:
       - "8080:8080"
+    container_name: auth-service
     environment:
       - NODE_ENV=production
+    volumes:
+      - ../auth-service:/usr/src/app
 
