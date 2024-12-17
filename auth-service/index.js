@@ -10,12 +10,12 @@ const port = process.env.PORT || 8080;
 app.use(express.json());
 
 // Conexión a MongoDB
-console.log("Mongo URI:", process.env.MONGO_URI); // Debug para verificar la URI
+const MONGO_URI = process.env.MONGO_URI;
+console.log("Mongo URI:", MONGO_URI); // Debug para verificar la URI
 
-mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGO_URI)
   .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => {
+  .catch(err => {
     console.error("Error connecting to MongoDB:", err.message);
     process.exit(1);
   });
@@ -24,7 +24,7 @@ mongoose
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password_hash: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true }
 });
 
 const User = mongoose.model("User", userSchema);
@@ -51,7 +51,7 @@ app.post("/register", async (req, res) => {
     const newUser = new User({
       username,
       password_hash: passwordHash,
-      email,
+      email
     });
 
     const savedUser = await newUser.save();

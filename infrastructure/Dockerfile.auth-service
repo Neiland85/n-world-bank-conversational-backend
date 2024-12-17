@@ -8,7 +8,10 @@ WORKDIR /usr/src/app
 COPY auth-service/package*.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm install --legacy-peer-deps
+
+# Instalar bcrypt desde la fuente para asegurar compatibilidad
+RUN npm install bcrypt --build-from-source
 
 # Copiar el código fuente
 COPY auth-service/ .
