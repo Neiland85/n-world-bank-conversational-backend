@@ -8,18 +8,32 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        
+
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install --prefix auth-service
+        run: |
+          npm install --prefix auth-service
+
+      - name: Run lint
+        run: |
+          npm run lint --prefix auth-service
 
       - name: Run tests
-        run: npm test --prefix auth-service
+        run: |
+          npm test --prefix auth-service
 
-      - name: Lint
-        run: npm run lint --prefix auth-service
+      - name: Build Docker image
+        run: |
+          docker build -t auth-service:latest -f infrastructure/Dockerfile.auth-service .
+
+      - name: Run container and test health endpoint
+        run: |
+          docker run -d -p 8080:8080 --name auth-service-test auth-service:latest
+          sleep 5 # Esperar que el contenedor levante
+          curl --fail http://localhost:8080/health || (echo "Healthcheck failed" && exit 1)
+
 
