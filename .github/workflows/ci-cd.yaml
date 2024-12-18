@@ -1,43 +1,48 @@
-name: CI/CD Pipeline for Auth-Service
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: 18
 
       - name: Install dependencies
-        run: npm install --prefix auth-service
+        run: |
+          npm ci --legacy-peer-deps
+          npm install bcrypt --build-from-source
 
       - name: Run lint
-        run: npm run lint --prefix auth-service
+        run: npm run lint
 
       - name: Run tests
-        run: npm test --prefix auth-service
+        run: npm test
 
       - name: Build Docker image
-        run: docker build -t auth-service:latest -f infrastructure/Dockerfile.auth-service .
-
-      - name: Run container and test health endpoint
         run: |
-          docker run -d -p 8080:8080 --name auth-service-test auth-service:latest
-          sleep 5 # Esperar que el contenedor levante
-          curl --fail http://localhost:8080/health || (echo "Healthcheck failed!" && exit 1)
+          docker-compose -f infrastructure/docker-compose.yml build --no-cache
 
-      - name: Cleanup Docker container
-        if: always()  # Ejecuta siempre, incluso si otros pasos fallan
-        run: docker stop auth-service-test && docker rm auth-service-test
+      - name: Run Docker container and check health
+        run: |
+          docker-compose -f infrastructure/docker-compose.yml up -d
+          sleep 10
+          curl http://localhost:8080/health
 
