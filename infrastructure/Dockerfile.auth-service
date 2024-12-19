@@ -1,24 +1,15 @@
-# Dockerfile para auth-service
 FROM node:18
 
-# Establecer el directorio de trabajo
 WORKDIR /usr/src/app
 
-# Copiar archivos de configuración
 COPY auth-service/package*.json ./
 
-# Instalar dependencias
-RUN npm install --legacy-peer-deps
+# Instalar dependencias y reconstruir bcrypt para Linux
+RUN npm install --legacy-peer-deps && npm rebuild bcrypt --build-from-source
 
-# Instalar bcrypt desde la fuente para asegurar compatibilidad
-RUN npm install bcrypt --build-from-source
-
-# Copiar el código fuente
 COPY auth-service/ .
 
-# Exponer el puerto
 EXPOSE 8080
 
-# Comando para iniciar el servidor
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
 
