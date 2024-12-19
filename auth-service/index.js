@@ -1,8 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-require("dotenv").config(); // Cargar las variables de entorno desde el archivo .env
+require("dotenv").config();
 
+// Crear la aplicación de Express
 const app = express();
 const port = process.env.PORT || 8080;
 
@@ -13,9 +14,10 @@ app.use(express.json());
 const MONGO_URI = process.env.MONGO_URI;
 console.log("Mongo URI:", MONGO_URI); // Debug para verificar la URI
 
-mongoose.connect(MONGO_URI)
+mongoose
+  .connect(MONGO_URI)
   .then(() => console.log("MongoDB connected successfully"))
-  .catch(err => {
+  .catch((err) => {
     console.error("Error connecting to MongoDB:", err.message);
     process.exit(1);
   });
@@ -23,8 +25,8 @@ mongoose.connect(MONGO_URI)
 // Definir el esquema y modelo de usuario
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password_hash: { type: String, required: true },
-  email: { type: String, required: true, unique: true }
+  passwordHash: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
 });
 
 const User = mongoose.model("User", userSchema);
@@ -38,24 +40,26 @@ app.get("/health", (req, res) => {
 app.post("/register", async (req, res) => {
   const { username, password, email } = req.body;
 
-  try {
-    // Validar campos requeridos
-    if (!username || !password || !email) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
+  if (!username || !password || !email) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
+  try {
     // Hashear la contraseña
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Guardar usuario en MongoDB
     const newUser = new User({
       username,
-      password_hash: passwordHash,
-      email
+      passwordHash,
+      email,
     });
 
     const savedUser = await newUser.save();
-    res.status(201).json({ message: "User registered successfully", user: savedUser });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: savedUser,
+    });
   } catch (err) {
     console.error("Error inserting user:", err.message);
     res.status(500).json({ error: "Internal server error" });

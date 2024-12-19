@@ -11,6 +11,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
     services:
       mongodb:
         image: mongo:6.0
@@ -28,14 +29,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd auth-service
           npm install --legacy-peer-deps
           npm rebuild bcrypt --build-from-source
 
       - name: Run lint
         run: |
           cd auth-service
-          npm run lint
+          npm run lint -- --fix
 
       - name: Run tests
         run: |
@@ -53,6 +53,5 @@ jobs:
           curl http://localhost:8080/health
 
       - name: Stop containers
-        run: |
-          docker-compose -f infrastructure/docker-compose.yml down
+        run: docker-compose -f infrastructure/docker-compose.yml down
 
