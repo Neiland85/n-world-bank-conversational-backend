@@ -17,32 +17,42 @@ jobs:
           - 27017:27017
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+    # Step 2: Setup Node.js environment
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
 
-      - name: Install dependencies
-        run: |
-          npm ci --legacy-peer-deps
-          npm install bcrypt --build-from-source
+    # Step 3: Install dependencies with specific handling for bcrypt
+    - name: Install dependencies
+      run: |
+        npm install --legacy-peer-deps
+        npm rebuild bcrypt --build-from-source
 
-      - name: Run lint
-        run: npm run lint
+    # Step 4: Run lint to ensure code style
+    - name: Run lint
+      run: npm run lint
 
-      - name: Run tests
-        run: npm test
+    # Step 5: Run tests to verify functionality
+    - name: Run tests
+      run: npm test
 
-      - name: Build Docker image
-        run: |
-          docker-compose -f infrastructure/docker-compose.yml build --no-cache
+    # Step 6: Build Docker image
+    - name: Build Docker image
+      run: docker-compose -f infrastructure/docker-compose.yml build --no-cache
 
-      - name: Run Docker container and check health
-        run: |
-          docker-compose -f infrastructure/docker-compose.yml up -d
-          sleep 10
-          curl http://localhost:8080/health
+    # Step 7: Run Docker container and check health
+    - name: Run Docker container and check health
+      run: |
+        docker-compose -f infrastructure/docker-compose.yml up -d
+        sleep 10
+        curl http://localhost:8080/health
+
+    # Step 8: Stop Docker containers
+    - name: Stop containers
+      run: docker-compose -f infrastructure/docker-compose.yml down
 
