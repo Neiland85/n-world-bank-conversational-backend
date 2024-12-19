@@ -29,6 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd auth-service
           npm install --legacy-peer-deps
           npm rebuild bcrypt --build-from-source
 
