@@ -11,15 +11,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     services:
       mongodb:
         image: mongo:6.0
         ports:
           - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: securepassword
 
     steps:
       - name: Checkout code
@@ -32,17 +28,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd auth-service
           npm install --legacy-peer-deps
           npm rebuild bcrypt --build-from-source
 
       - name: Run lint
         run: npm run lint
-        working-directory: auth-service
 
       - name: Run tests
         run: npm test
-        working-directory: auth-service
+
+      - name: Install Docker and Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
 
       - name: Build Docker image
         run: docker-compose -f infrastructure/docker-compose.yml build --no-cache
