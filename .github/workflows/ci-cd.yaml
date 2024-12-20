@@ -65,8 +65,17 @@ jobs:
       - name: Run Docker container and check health
         run: |
           docker-compose -f infrastructure/docker-compose.yml up -d
-          sleep 10
-          curl http://localhost:8080/health
+          echo "Waiting for auth-service to be ready..."
+          for i in {1..10}; do
+            sleep 5
+            if curl -s http://localhost:8080/health; then
+              echo "auth-service is ready!"
+              exit 0
+            fi
+            echo "Retrying... ($i/10)"
+          done
+          echo "auth-service did not become ready in time"
+          exit 1
 
       - name: Stop containers
         run: docker-compose -f infrastructure/docker-compose.yml down

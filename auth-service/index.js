@@ -33,7 +33,7 @@ const User = mongoose.model("User", userSchema);
 
 // Endpoint de salud
 app.get("/health", (req, res) => {
-  res.json({ status: "OK", service: "auth-service" });
+  res.status(200).json({ status: "OK", service: "auth-service" });
 });
 
 // Endpoint para registrar usuarios
