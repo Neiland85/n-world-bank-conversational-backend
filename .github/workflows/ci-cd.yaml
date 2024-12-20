@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout code
@@ -31,22 +31,27 @@ jobs:
         docker compose version
 
     - name: Install dependencies
+      working-directory: ./auth-service
       run: |
         npm install --legacy-peer-deps
         npm rebuild bcrypt --build-from-source
 
     - name: Run lint
+      working-directory: ./auth-service
       run: npm run lint
 
     - name: Run tests
+      working-directory: ./auth-service
       run: npm test
 
     - name: Build Docker image
-      run: docker compose -f infrastructure/docker-compose.yml build --no-cache
+      working-directory: ./infrastructure
+      run: docker compose -f docker-compose.yml build --no-cache
 
     - name: Run Docker container and check health
+      working-directory: ./infrastructure
       run: |
-        docker compose -f infrastructure/docker-compose.yml up -d
+        docker compose -f docker-compose.yml up -d
         echo "Waiting for auth-service to be ready..."
         for i in {1..10}; do
           sleep 5
@@ -54,11 +59,11 @@ jobs:
             echo "auth-service is ready!"
             exit 0
           fi
-          echo "Retrying... ($i/10)"
         done
         echo "auth-service did not become ready in time"
         exit 1
 
     - name: Stop containers
-      run: docker compose -f infrastructure/docker-compose.yml down
+      working-directory: ./infrastructure
+      run: docker compose -f docker-compose.yml down
 
