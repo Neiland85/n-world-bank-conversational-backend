@@ -8,16 +8,21 @@ module.exports = [
     files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
+      sourceType: "module",
       globals: {
-        node: true,
-        commonjs: true,
+        require: "readonly",
+        module: "readonly",
       },
     },
     plugins: {
       prettier: eslintPluginPrettier,
     },
     rules: {
-      "prettier/prettier": "error",
+      "prettier/prettier": "error", // Enforce Prettier formatting
+      "no-console": "warn", // Allow console.log globally but warn
+      "no-unused-vars": "warn", // Warn about unused variables
+      "no-debugger": "error", // Prevent debugger statements in production
     },
   },
 ];
+
