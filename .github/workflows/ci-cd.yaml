@@ -27,14 +27,17 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
+        working-directory: auth-service
         run: |
           npm install --legacy-peer-deps
           npm rebuild bcrypt --build-from-source
 
       - name: Run lint
+        working-directory: auth-service
         run: npm run lint
 
       - name: Run tests
+        working-directory: auth-service
         run: npm test
 
       - name: Install Docker and Docker Compose
