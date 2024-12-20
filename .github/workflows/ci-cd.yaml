@@ -4,68 +4,61 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+    - name: Set up Node.js environment
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
 
-      - name: Install dependencies
-        working-directory: auth-service
-        run: |
-          npm install --legacy-peer-deps
-          npm rebuild bcrypt --build-from-source
+    - name: Install Docker and Docker Compose
+      run: |
+        sudo apt-get update
+        sudo apt-get remove -y containerd.io || true
+        sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
 
-      - name: Run lint
-        working-directory: auth-service
-        run: npm run lint
+    - name: Install dependencies
+      run: |
+        npm install --legacy-peer-deps
+        npm rebuild bcrypt --build-from-source
 
-      - name: Run tests
-        working-directory: auth-service
-        run: npm test
+    - name: Run lint
+      run: npm run lint
 
-      - name: Install Docker and Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+    - name: Run tests
+      run: npm test
 
-      - name: Build Docker image
-        run: docker-compose -f infrastructure/docker-compose.yml build --no-cache
+    - name: Build Docker image
+      run: docker-compose -f infrastructure/docker-compose.yml build --no-cache
 
-      - name: Run Docker container and check health
-        run: |
-          docker-compose -f infrastructure/docker-compose.yml up -d
-          echo "Waiting for auth-service to be ready..."
-          for i in {1..10}; do
-            sleep 5
-            if curl -s http://localhost:8080/health; then
-              echo "auth-service is ready!"
-              exit 0
-            fi
-            echo "Retrying... ($i/10)"
-          done
-          echo "auth-service did not become ready in time"
-          exit 1
+    - name: Run Docker container and check health
+      run: |
+        docker-compose -f infrastructure/docker-compose.yml up -d
+        echo "Waiting for auth-service to be ready..."
+        for i in {1..10}; do
+          sleep 5
+          if curl -s http://localhost:8080/health; then
+            echo "auth-service is ready!"
+            exit 0
+          fi
+          echo "Retrying... ($i/10)"
+        done
+        echo "auth-service did not become ready in time"
+        exit 1
 
-      - name: Stop containers
-        run: docker-compose -f infrastructure/docker-compose.yml down
+    - name: Stop containers
+      run: docker-compose -f infrastructure/docker-compose.yml down
 
