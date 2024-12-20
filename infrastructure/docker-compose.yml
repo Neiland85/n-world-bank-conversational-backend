@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   auth-service:
     build:
@@ -7,7 +8,22 @@ services:
       - "8080:8080"
     container_name: auth-service
     environment:
-      - NODE_ENV=production
+      NODE_ENV: production
+      MONGO_URI: ${MONGO_URI}
     volumes:
       - ../auth-service:/usr/src/app
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+networks:
+  default:
+    driver: bridge
 
