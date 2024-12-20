@@ -12,11 +12,11 @@ app.use(express.json());
 
 // Conexión a MongoDB
 const MONGO_URI = process.env.MONGO_URI;
-console.log("Mongo URI:", MONGO_URI); // Debug para verificar la URI
 
+// Conexión con manejo de errores y mensajes de log
 mongoose
   .connect(MONGO_URI)
-  .then(() => console.log("MongoDB connected successfully"))
+  .then(() => console.info("MongoDB connected successfully"))
   .catch((err) => {
     console.error("Error connecting to MongoDB:", err.message);
     process.exit(1);
@@ -68,5 +68,5 @@ app.post("/register", async (req, res) => {
 
 // Iniciar el servidor
 app.listen(port, () => {
-  console.log(`Auth-service running on port ${port}`);
+  console.info(`Auth-service running on port ${port}`);
 });
