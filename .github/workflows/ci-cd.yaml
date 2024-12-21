@@ -16,12 +16,12 @@ jobs:
     - name: Set up Node.js environment
       uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18
+        cache: 'npm' 
 
     - name: Install Docker and Docker Compose
       run: |
         sudo apt-get update
-        sudo apt-get remove -y containerd.io || true
         sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -38,30 +38,47 @@ jobs:
 
     - name: Run lint
       working-directory: ./auth-service
-      run: npm run lint
+      run: |
+        npm run lint || exit 1
 
     - name: Run tests
       working-directory: ./auth-service
-      run: npm test
+      run: |
+        npm test -- --coverage || exit 1
 
     - name: Build Docker image
       working-directory: ./infrastructure
-      run: docker compose -f docker-compose.yml build --no-cache
+      run: |
+        docker compose -f docker-compose.yml build --no-cache
 
-    - name: Run Docker container and check health
+    - name: Run Docker container and check health (GET and POST)
       working-directory: ./infrastructure
       run: |
         docker compose -f docker-compose.yml up -d
-        echo "Waiting for auth-service to be ready..."
+        echo "Testing /health GET endpoint..."
         for i in {1..10}; do
           sleep 5
-          if curl -s http://localhost:8080/health; then
-            echo "auth-service is ready!"
-            exit 0
+          if curl -s -X GET http://localhost:8080/health | grep '"status":"OK"'; then
+            echo "GET /health endpoint passed."
+            break
+          fi
+          if [ $i -eq 10 ]; then
+            echo "GET /health endpoint failed."
+            exit 1
           fi
         done
-        echo "auth-service did not become ready in time"
-        exit 1
+        echo "Testing /health POST endpoint..."
+        for i in {1..10}; do
+          sleep 5
+          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep '"status":"OK"'; then
+            echo "POST /health endpoint passed."
+            break
+          fi
+          if [ $i -eq 10 ]; then
+            echo "POST /health endpoint failed."
+            exit 1
+          fi
+        done
 
     - name: Stop containers
       working-directory: ./infrastructure
