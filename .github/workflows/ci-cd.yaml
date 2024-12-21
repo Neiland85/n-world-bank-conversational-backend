@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18
-        cache: 'npm' 
+        cache: 'npm'
 
     - name: Install Docker and Docker Compose
       run: |
@@ -39,26 +39,26 @@ jobs:
     - name: Run lint
       working-directory: ./auth-service
       run: |
-        npm run lint || exit 1
+        npm run lint || (echo "Linting failed" && exit 1)
 
     - name: Run tests
       working-directory: ./auth-service
       run: |
-        npm test -- --coverage || exit 1
+        npm test -- --coverage || (echo "Tests failed" && exit 1)
 
     - name: Build Docker image
       working-directory: ./infrastructure
       run: |
         docker compose -f docker-compose.yml build --no-cache
 
-    - name: Run Docker container and check health (GET and POST)
+    - name: Run Docker container and check health
       working-directory: ./infrastructure
       run: |
         docker compose -f docker-compose.yml up -d
         echo "Testing /health GET endpoint..."
         for i in {1..10}; do
           sleep 5
-          if curl -s -X GET http://localhost:8080/health | grep '"status":"OK"'; then
+          if curl -s -X GET http://localhost:8080/health | grep -q '"status":"OK"'; then
             echo "GET /health endpoint passed."
             break
           fi
@@ -70,7 +70,7 @@ jobs:
         echo "Testing /health POST endpoint..."
         for i in {1..10}; do
           sleep 5
-          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep '"status":"OK"'; then
+          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep -q '"status":"OK"'; then
             echo "POST /health endpoint passed."
             break
           fi
