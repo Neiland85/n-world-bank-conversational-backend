@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   auth-service:
     build:
@@ -11,7 +12,7 @@ services:
       NODE_ENV: production
       MONGO_URI: ${MONGO_URI}
     volumes:
-      - ../auth-service:/usr/src/app
+      - ./auth-service:/usr/src/app
     depends_on:
       - mongodb
 
@@ -23,6 +24,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
 networks:
   default:
     driver: bridge

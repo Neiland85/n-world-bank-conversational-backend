@@ -1,5 +1,4 @@
 FROM node:18
-
 WORKDIR /usr/src/app
 
 COPY auth-service/package*.json ./
@@ -8,8 +7,6 @@ COPY auth-service/package*.json ./
 RUN npm install --legacy-peer-deps && npm rebuild bcrypt --build-from-source
 
 COPY auth-service/ .
-
 EXPOSE 8080
-
 CMD ["node", "index.js"]
 

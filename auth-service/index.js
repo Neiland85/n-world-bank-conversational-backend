@@ -1,72 +1,123 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-require("dotenv").config();
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const dotenv = require('dotenv');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SecretClient } = require('@azure/keyvault-secrets');
 
-// Crear la aplicación de Express
 const app = express();
-const port = process.env.PORT || 8080;
-
-// Middleware para procesar JSON
 app.use(express.json());
 
-// Conexión a MongoDB
-const MONGO_URI = process.env.MONGO_URI;
+// Cargar variables de entorno desde dotenv o configurar entorno
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
 
-// Conexión con manejo de errores y mensajes de log
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.info("MongoDB connected successfully"))
-  .catch((err) => {
-    console.error("Error connecting to MongoDB:", err.message);
+/**
+ * Función para cargar secretos desde Azure Key Vault
+ */
+async function loadSecrets() {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      // Validar que KEY_VAULT_NAME está configurado
+      const keyVaultName = process.env.KEY_VAULT_NAME;
+      if (!keyVaultName) {
+        throw new Error('KEY_VAULT_NAME is not defined in environment variables.');
+      }
+
+      const credential = new DefaultAzureCredential();
+      const url = `https://${keyVaultName}.vault.azure.net`;
+
+      const client = new SecretClient(url, credential);
+
+      const mongoUri = await client.getSecret('MONGO_URI');
+      const username = await client.getSecret('MONGO_INITDB_ROOT_USERNAME');
+      const password = await client.getSecret('MONGO_INITDB_ROOT_PASSWORD');
+
+      process.env.MONGO_URI = mongoUri.value;
+      process.env.MONGO_INITDB_ROOT_USERNAME = username.value;
+      process.env.MONGO_INITDB_ROOT_PASSWORD = password.value;
+
+      console.log('Secrets loaded from Azure Key Vault.');
+    } catch (err) {
+      console.error('Error loading secrets from Azure Key Vault:', err.message);
+      process.exit(1);
+    }
+  } else {
+    console.log(`Running in ${process.env.NODE_ENV || 'development'} mode. Secrets not loaded from Key Vault.`);
+  }
+}
+
+/**
+ * Conectar a MongoDB
+ */
+async function connectToDatabase() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI is not defined in environment variables.');
+    }
+
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected successfully!');
+  } catch (err) {
+    console.error('Error connecting to MongoDB:', err.message);
     process.exit(1);
-  });
+  }
+}
 
-// Definir el esquema y modelo de usuario
+// Definir esquema y modelo de usuario
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model('User', userSchema);
 
 // Endpoint de salud
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", service: "auth-service" });
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', service: 'auth-service' });
 });
 
 // Endpoint para registrar usuarios
-app.post("/register", async (req, res) => {
-  const { username, password, email } = req.body;
+app.post('/register', async (req, res) => {
+  const { username, password } = req.body;
 
-  if (!username || !password || !email) {
-    return res.status(400).json({ error: "Missing fields" });
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Missing fields' });
   }
 
   try {
-    // Hashear la contraseña
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hashedPassword });
 
-    // Guardar usuario en MongoDB
-    const newUser = new User({
-      username,
-      passwordHash,
-      email,
-    });
-
-    const savedUser = await newUser.save();
-    res.status(201).json({
-      message: "User registered successfully",
-      user: savedUser,
-    });
+    const savedUser = await user.save();
+    res.status(201).json({ message: 'User registered successfully', user: savedUser });
   } catch (err) {
-    console.error("Error inserting user:", err.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('Error inserting user:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Iniciar el servidor
-app.listen(port, () => {
-  console.info(`Auth-service running on port ${port}`);
-});
+/**
+ * Arrancar el servidor
+ */
+async function startServer() {
+  try {
+    await loadSecrets(); // Cargar secretos desde Key Vault
+    await connectToDatabase(); // Conectar a la base de datos
+
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+      console.log(`Auth-service running on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  }
+}
+
+// Iniciar la aplicación
+startServer();
+
