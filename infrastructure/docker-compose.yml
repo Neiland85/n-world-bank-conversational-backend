@@ -3,16 +3,18 @@ version: '3.8'
 services:
   auth-service:
     build:
-      context: ..
-      dockerfile: infrastructure/Dockerfile.auth-service
+      context: ../auth-service
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     container_name: auth-service
     environment:
       NODE_ENV: production
       MONGO_URI: ${MONGO_URI}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
-      - ./auth-service:/usr/src/app
+      - ../auth-service:/usr/src/app
     depends_on:
       - mongodb
 

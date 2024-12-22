@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // Cambiado de 'bcrypt' a 'bcryptjs'
 const dotenv = require('dotenv');
+const path = require('path');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 
@@ -9,8 +10,13 @@ const app = express();
 app.use(express.json());
 
 // Cargar variables de entorno desde dotenv o configurar entorno
-const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+const envFile =
+  process.env.NODE_ENV === 'production'
+    ? path.resolve(__dirname, '../.env.production')
+    : path.resolve(__dirname, '../.env.development');
 dotenv.config({ path: envFile });
+
+console.log(`Using environment file: ${envFile}`);
 
 /**
  * Función para cargar secretos desde Azure Key Vault

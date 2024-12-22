@@ -30,6 +30,15 @@ jobs:
           docker --version
           docker compose version
 
+      - name: Load environment variables
+        run: echo "Loading environment variables"
+        env:
+          NODE_ENV: production
+          KEY_VAULT_NAME: ${{ secrets.KEY_VAULT_NAME }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
+
       - name: Install dependencies
         working-directory: ./auth-service
         run: |

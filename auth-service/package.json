@@ -14,7 +14,7 @@
   "dependencies": {
     "@azure/identity": "^4.5.0",
     "@azure/keyvault-secrets": "^4.9.0",
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "express": "^4.21.2",
     "mongoose": "^7.0.0"
   },
@@ -27,4 +27,3 @@
     "supertest": "^7.0.0"
   }
 }
-
