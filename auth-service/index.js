@@ -1,21 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // Cambiado de 'bcrypt' a 'bcryptjs'
+const bcrypt = require('bcryptjs'); // Actualizado a bcryptjs
 const dotenv = require('dotenv');
-const path = require('path');
+const path = require('path'); // Asegura que carga el archivo desde la ubicación correcta
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 
 const app = express();
 app.use(express.json());
 
-// Cargar variables de entorno desde dotenv o configurar entorno
-const envFile =
-  process.env.NODE_ENV === 'production'
-    ? path.resolve(__dirname, '../.env.production')
-    : path.resolve(__dirname, '../.env.development');
-dotenv.config({ path: envFile });
-
+// Cargar variables de entorno
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: path.resolve(__dirname, '../', envFile) }); // Carga desde el directorio raíz del proyecto
 console.log(`Using environment file: ${envFile}`);
 
 /**
@@ -24,7 +20,6 @@ console.log(`Using environment file: ${envFile}`);
 async function loadSecrets() {
   if (process.env.NODE_ENV === 'production') {
     try {
-      // Validar que KEY_VAULT_NAME está configurado
       const keyVaultName = process.env.KEY_VAULT_NAME;
       if (!keyVaultName) {
         throw new Error('KEY_VAULT_NAME is not defined in environment variables.');
@@ -35,9 +30,10 @@ async function loadSecrets() {
 
       const client = new SecretClient(url, credential);
 
-      const mongoUri = await client.getSecret('MONGO_URI');
-      const username = await client.getSecret('MONGO_INITDB_ROOT_USERNAME');
-      const password = await client.getSecret('MONGO_INITDB_ROOT_PASSWORD');
+      // Usar nombres de secretos en minúsculas con guiones
+      const mongoUri = await client.getSecret('mongo-uri');
+      const username = await client.getSecret('mongo-initdb-root-username');
+      const password = await client.getSecret('mongo-initdb-root-password');
 
       process.env.MONGO_URI = mongoUri.value;
       process.env.MONGO_INITDB_ROOT_USERNAME = username.value;
