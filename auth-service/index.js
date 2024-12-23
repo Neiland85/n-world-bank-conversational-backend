@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // Actualizado a bcryptjs
+const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
-const path = require('path'); // Asegura que carga el archivo desde la ubicación correcta
+const path = require('path');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 
@@ -11,11 +11,11 @@ app.use(express.json());
 
 // Cargar variables de entorno
 const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
-dotenv.config({ path: path.resolve(__dirname, '../', envFile) }); // Carga desde el directorio raíz del proyecto
+dotenv.config({ path: path.resolve(__dirname, '../', envFile) });
 console.log(`Using environment file: ${envFile}`);
 
 /**
- * Función para cargar secretos desde Azure Key Vault
+ * Cargar secretos desde Azure Key Vault
  */
 async function loadSecrets() {
   if (process.env.NODE_ENV === 'production') {
@@ -30,7 +30,6 @@ async function loadSecrets() {
 
       const client = new SecretClient(url, credential);
 
-      // Usar nombres de secretos en minúsculas con guiones
       const mongoUri = await client.getSecret('mongo-uri');
       const username = await client.getSecret('mongo-initdb-root-username');
       const password = await client.getSecret('mongo-initdb-root-password');
@@ -45,7 +44,7 @@ async function loadSecrets() {
       process.exit(1);
     }
   } else {
-    console.log(`Running in ${process.env.NODE_ENV || 'development'} mode. Secrets not loaded from Key Vault.`);
+    console.log(`Running in ${process.env.NODE_ENV} mode. Secrets not loaded from Key Vault.`);
   }
 }
 
@@ -107,7 +106,7 @@ app.post('/register', async (req, res) => {
  */
 async function startServer() {
   try {
-    await loadSecrets(); // Cargar secretos desde Key Vault
+    await loadSecrets(); // Cargar secretos desde Key Vault si es producción
     await connectToDatabase(); // Conectar a la base de datos
 
     const port = process.env.PORT || 3000;

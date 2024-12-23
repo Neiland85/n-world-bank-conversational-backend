@@ -1,21 +1,21 @@
-# Usa la imagen oficial de Node.js
+# Usar una imagen base de Node.js
 FROM node:18
 
-# Establece el directorio de trabajo dentro del contenedor
+# Configuración del directorio de trabajo
 WORKDIR /usr/src/app
 
-# Copia los archivos necesarios
+# Copiar dependencias
 COPY package*.json ./
 
-# Instala las dependencias
+# Instalar dependencias
 RUN npm install
 
-# Copia el resto de los archivos
+# Copiar el código restante
 COPY . .
 
-# Exponer el puerto en el que corre la aplicación
-EXPOSE 8080
+# Exponer el puerto de la aplicación
+EXPOSE 3000
 
-# Comando para ejecutar la aplicación
+# Comando para iniciar el servicio
 CMD ["npm", "start"]
 

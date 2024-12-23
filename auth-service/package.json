@@ -7,7 +7,8 @@
     "start": "node index.js",
     "test": "jest --coverage",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build": "npm install"
   },
   "author": "",
   "license": "ISC",
@@ -15,6 +16,7 @@
     "@azure/identity": "^4.5.0",
     "@azure/keyvault-secrets": "^4.9.0",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^7.0.0"
   },
@@ -27,3 +29,5 @@
     "supertest": "^7.0.0"
   }
 }
+
+
