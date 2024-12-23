@@ -1,89 +1,93 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
+pull_request:
+branches:
+- main
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-22.04
+build-and-test:
+runs-on: ubuntu-22.04
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+services:
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - 27017:27017
+    env:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: securepassword
+      
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v3
 
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+  - name: Set up Node.js environment
+    uses: actions/setup-node@v3
+    with:
+      node-version: 18
+      cache: 'npm' # Habilitar la caché de npm
 
-      - name: Install Docker and Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get remove -y containerd.io || true
-          sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-          docker --version
-          docker compose version
+  - name: Install Docker and Docker Compose
+    run: |
+      sudo apt-get update
+      sudo apt-get remove -y containerd.io || true
+      sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+      sudo apt-get update
+      sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+      docker --version
+      docker compose version
 
-      - name: Load environment variables
-        run: echo "Loading environment variables"
-        env:
-          NODE_ENV: production
-          KEY_VAULT_NAME: ${{ secrets.KEY_VAULT_NAME }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
+  - name: Install dependencies
+    working-directory: ./auth-service
+    run: |
+      npm install --legacy-peer-deps
+      npm rebuild bcrypt --build-from-source
 
-      - name: Install dependencies
-        working-directory: ./auth-service
-        run: |
-          npm install --legacy-peer-deps
-          npm rebuild bcrypt --build-from-source
+  - name: Run lint
+    working-directory: ./auth-service
+    run: |
+      npm run lint || (echo "Linting failed" && exit 1)
 
-      - name: Run lint
-        working-directory: ./auth-service
-        run: npm run lint
+  - name: Run tests
+    working-directory: ./auth-service
+    run: |
+      npm test -- --coverage || (echo "Tests failed" && exit 1)
 
-      - name: Run tests
-        working-directory: ./auth-service
-        run: |
-          npm test -- --coverage || (echo "Tests failed" && exit 1)
+  - name: Build Docker image
+    working-directory: ./infrastructure
+    run: docker compose -f docker-compose.yml build --no-cache
 
-      - name: Build Docker image
-        working-directory: ./infrastructure
-        run: docker compose -f docker-compose.yml build --no-cache
+  - name: Run Docker container and check health
+    working-directory: ./infrastructure
+    run: |
+      docker compose -f docker-compose.yml up -d
+      echo "Waiting for auth-service to be ready..."
+      for i in {1..10}; do
+        sleep 5
+        if curl -s http://localhost:8080/health | grep -q '"status":"OK"'; then
+          echo "GET /health endpoint passed."
+          break
+        fi
+      done
+      if [ $i -eq 10 ]; then
+        echo "GET /health endpoint failed."
+        exit 1
+      fi
+      echo "Testing /health POST endpoint..."
+      sleep 5
+      if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep -q '"status":"OK"'; then
+        echo "POST /health endpoint passed."
+      else
+        echo "POST /health endpoint failed."
+        exit 1
+      fi
 
-      - name: Run Docker container and check health
-        working-directory: ./infrastructure
-        run: |
-          docker compose -f docker-compose.yml up -d
-          echo "Waiting for auth-service to be ready..."
-          for i in {1..10}; do
-            sleep 5
-            if curl -s http://localhost:8080/health | grep -q "status"; then
-              echo "GET /health endpoint passed."
-              break
-            fi
-          done
-          if [ $i -eq 10 ]; then
-            echo "GET /health endpoint failed."
-            exit 1
-          fi
-          echo "Testing /health POST endpoint..."
-          sleep 5
-          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"status":"OK"}' | grep -q "status"; then
-            echo "POST /health endpoint passed."
-          else
-            echo "POST /health endpoint failed."
-            exit 1
-          fi
-
-      - name: Stop containers
-        working-directory: ./infrastructure
-        run: docker compose -f docker-compose.yml down
-
+  - name: Stop containers
+    working-directory: ./infrastructure
+    run: docker compose -f docker-compose.yml down

@@ -35,16 +35,16 @@ async function loadSecrets() {
       const password = await client.getSecret('mongo-initdb-root-password');
 
       process.env.MONGO_URI = mongoUri.value;
-      process.env.MONGO_INITDB_ROOT_USERNAME = username.value;
-      process.env.MONGO_INITDB_ROOT_PASSWORD = password.value;
+       process.env.MONGO_INITDB_ROOT_USERNAME = username.value;
+       process.env.MONGO_INITDB_ROOT_PASSWORD = password.value;
 
       console.log('Secrets loaded from Azure Key Vault.');
     } catch (err) {
       console.error('Error loading secrets from Azure Key Vault:', err.message);
-      process.exit(1);
+       process.exit(1);
     }
   } else {
-    console.log(`Running in ${process.env.NODE_ENV} mode. Secrets not loaded from Key Vault.`);
+    console.log(`Running in ${process.env.NODE_ENV || 'development'} mode. Secrets not loaded from Key Vault.`);
   }
 }
 
@@ -53,15 +53,12 @@ async function loadSecrets() {
  */
 async function connectToDatabase() {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI is not defined in environment variables.');
-    }
+      if (!process.env.MONGO_URI) {
+          throw new Error("MONGO_URI is not defined in environment variables.");
+        }
 
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected successfully!');
+    await mongoose.connect(process.env.MONGO_URI); // Removed useNewUrlParser y useUnifiedTopology
+      console.log('MongoDB connected successfully!');
   } catch (err) {
     console.error('Error connecting to MongoDB:', err.message);
     process.exit(1);
@@ -121,4 +118,3 @@ async function startServer() {
 
 // Iniciar la aplicación
 startServer();
-
