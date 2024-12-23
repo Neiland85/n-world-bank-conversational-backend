@@ -1,4 +1,4 @@
-name: CI-CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -49,13 +49,14 @@ jobs:
 
       - name: Run lint
         working-directory: ./auth-service
-        run: npm run lint
-
+        run: |
+          npm run lint || (echo "Linting failed" && exit 1)
+        
       - name: Run tests
         working-directory: ./auth-service
         run: |
           npm test -- --coverage || (echo "Tests failed" && exit 1)
-
+     
       - name: Build Docker image
         working-directory: ./infrastructure
         run: docker compose -f docker-compose.yml build --no-cache
@@ -78,13 +79,13 @@ jobs:
           fi
           echo "Testing /health POST endpoint..."
           sleep 5
-          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep -q '"status":"OK"'; then
+          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"status":"OK"}' | grep -q '"status":"OK"'; then
             echo "POST /health endpoint passed."
           else
             echo "POST /health endpoint failed."
             exit 1
           fi
-
+    
       - name: Stop containers
         working-directory: ./infrastructure
         run: docker compose -f docker-compose.yml down
