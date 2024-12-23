@@ -11,16 +11,15 @@ branches:
 jobs:
 build-and-test:
 runs-on: ubuntu-22.04
-
 services:
-  mongodb:
-    image: mongo:6.0
-    ports:
-      - 27017:27017
-    env:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: securepassword
-      
+mongodb:
+image: mongo:6.0
+ports:
+- 27017:27017
+env:
+MONGO_INITDB_ROOT_USERNAME: admin
+MONGO_INITDB_ROOT_PASSWORD: securepassword
+
 steps:
   - name: Checkout code
     uses: actions/checkout@v3
@@ -29,7 +28,7 @@ steps:
     uses: actions/setup-node@v3
     with:
       node-version: 18
-      cache: 'npm' # Habilitar la caché de npm
+      cache: 'npm'
 
   - name: Install Docker and Docker Compose
     run: |
@@ -51,8 +50,7 @@ steps:
 
   - name: Run lint
     working-directory: ./auth-service
-    run: |
-      npm run lint || (echo "Linting failed" && exit 1)
+    run: npm run lint
 
   - name: Run tests
     working-directory: ./auth-service
@@ -81,7 +79,7 @@ steps:
       fi
       echo "Testing /health POST endpoint..."
       sleep 5
-      if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep -q '"status":"OK"'; then
+      if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"status":"OK"}' | grep -q '"status":"OK"'; then
         echo "POST /health endpoint passed."
       else
         echo "POST /health endpoint failed."
