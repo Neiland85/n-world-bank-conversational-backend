@@ -11,6 +11,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-22.04
+
     services:
       mongodb:
         image: mongo:6.0
@@ -41,21 +42,21 @@ jobs:
           sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
           docker --version
           docker compose version
-
+        
       - name: Install dependencies
-        working-directory: ./auth-service
+        working-directory: auth-service
         run: |
           npm install --legacy-peer-deps
           npm rebuild bcrypt --build-from-source
 
       - name: Run lint
-        working-directory: ./auth-service
-        run: npm run lint
-
+        working-directory: auth-service
+        run: npm run lint 
       - name: Run tests
-        working-directory: ./auth-service
+        working-directory: auth-service
         run: |
           npm test -- --coverage || (echo "Tests failed" && exit 1)
+    
 
       - name: Build Docker image
         working-directory: ./infrastructure
@@ -78,14 +79,10 @@ jobs:
             exit 1
           fi
           echo "Testing /health POST endpoint..."
-          sleep 5
-          if curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"status":"OK"}' | grep -q '"status":"OK"'; then
-            echo "POST /health endpoint passed."
-          else
-            echo "POST /health endpoint failed."
-            exit 1
-          fi
-        
+           sleep 5
+           curl -s -X POST http://localhost:8080/health -H "Content-Type: application/json" -d '{"test":"data"}' | grep -q '"status":"OK"'  || (echo "POST /health endpoint failed." && exit 1)
+
       - name: Stop containers
         working-directory: ./infrastructure
-        run: docker compose -f infrastructure/docker-compose.yml down
+        run: docker compose -f docker-compose.yml down
+
